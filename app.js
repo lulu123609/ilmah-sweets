@@ -62,6 +62,21 @@ const CAKE_CATALOG = [
     ]
   },
   {
+    id: "bolu-pisang",
+    name: "Bolu Pisang",
+    category: "bolu",
+    categoryLabel: "Aneka Bolu",
+    basePrice: 42000,
+    image: "BOLU PISANG.jpg",
+    rating: 4.9,
+    reviews: 174,
+    description: "Bolu pisang klasik khas ILMAH SWEETS dari olahan pisang raja matang asli pilihan. Beraroma harum manis karamel alami, teksturnya super moist, empuk, dan legit.",
+    sizes: [
+      { id: "bps-1", name: "1 Loyang Bulat Utuh", priceDiff: 0 },
+      { id: "bps-2", name: "Paket 2 Loyang Hemat", priceDiff: 38000 }
+    ]
+  },
+  {
     id: "bolu-santan",
     name: "Bolu Santan",
     category: "bolu",
@@ -297,6 +312,7 @@ const STATE = {
 document.addEventListener("DOMContentLoaded", () => {
   initClock();
   applyStoreConfig();
+  loadCustomerProfile();
   loadCartFromStorage();
   loadOrdersFromStorage();
   initDeliveryDateInput();
@@ -323,6 +339,94 @@ function applyStoreConfig() {
 
   const igEl = document.getElementById("store-ig-display");
   if (igEl) igEl.textContent = STORE_CONFIG.instagram;
+}
+
+// ============================================================
+// PROFIL PELANGGAN (DINAMIS SESUAI HP & PENGGUNA MASING-MASING)
+// ============================================================
+const CUSTOMER_PROFILE = {
+  name: "",
+  phone: ""
+};
+
+function loadCustomerProfile() {
+  try {
+    const saved = localStorage.getItem("ilmah_customer_profile");
+    if (saved) {
+      const data = JSON.parse(saved);
+      CUSTOMER_PROFILE.name = data.name || "";
+      CUSTOMER_PROFILE.phone = data.phone || "";
+    }
+  } catch (e) {}
+
+  updateProfileDisplay();
+  syncProfileToCartInputs();
+}
+
+function saveCustomerProfile(name, phone) {
+  CUSTOMER_PROFILE.name = name ? name.trim() : "";
+  if (phone !== undefined) {
+    CUSTOMER_PROFILE.phone = phone ? phone.trim() : "";
+  }
+
+  try {
+    localStorage.setItem("ilmah_customer_profile", JSON.stringify(CUSTOMER_PROFILE));
+  } catch (e) {}
+
+  updateProfileDisplay();
+  syncProfileToCartInputs();
+}
+
+function updateProfileDisplay() {
+  const nameEl = document.getElementById("account-name-display");
+  const phoneEl = document.getElementById("account-phone-display");
+  const badgeEl = document.getElementById("account-badge-display");
+  const avatarEl = document.getElementById("profile-avatar-display");
+
+  if (nameEl) {
+    nameEl.textContent = CUSTOMER_PROFILE.name ? CUSTOMER_PROFILE.name : "Pelanggan Baru";
+  }
+
+  if (phoneEl) {
+    if (CUSTOMER_PROFILE.phone) {
+      phoneEl.textContent = `WA: ${CUSTOMER_PROFILE.phone}`;
+    } else if (CUSTOMER_PROFILE.name) {
+      phoneEl.textContent = "Pelanggan Setia ILMAH SWEETS";
+    } else {
+      phoneEl.textContent = "Sentuh 'Ubah' untuk pasang nama Anda";
+    }
+  }
+
+  if (badgeEl) {
+    badgeEl.textContent = CUSTOMER_PROFILE.name ? "⭐ Member ILMAH SWEETS" : "⭐ Tamu Spesial";
+  }
+
+  if (avatarEl) {
+    avatarEl.textContent = CUSTOMER_PROFILE.name ? "👩🏻‍🍳" : "👤";
+  }
+}
+
+function syncProfileToCartInputs() {
+  const nameInput = document.getElementById("customer-name");
+  const phoneInput = document.getElementById("customer-phone");
+
+  if (nameInput && CUSTOMER_PROFILE.name && !nameInput.value) {
+    nameInput.value = CUSTOMER_PROFILE.name;
+  }
+  if (phoneInput && CUSTOMER_PROFILE.phone && !phoneInput.value) {
+    phoneInput.value = CUSTOMER_PROFILE.phone;
+  }
+}
+
+function promptEditProfile() {
+  const currentName = CUSTOMER_PROFILE.name || "";
+  const newName = prompt("Masukkan nama Anda (untuk nama akun di HP ini):", currentName);
+  if (newName !== null && newName.trim() !== "") {
+    const currentPhone = CUSTOMER_PROFILE.phone || "";
+    const newPhone = prompt("Masukkan nomor WhatsApp Anda (opsional):", currentPhone);
+    saveCustomerProfile(newName, newPhone !== null ? newPhone : currentPhone);
+    showToast(`Halo, ${newName.trim()}! Nama akun berhasil disimpan ✨`);
+  }
 }
 
 // Update real-time clock in top status bar
@@ -419,6 +523,20 @@ function setupEventListeners() {
     favBtn.addEventListener("click", () => {
       favBtn.classList.toggle("active");
       showToast(favBtn.classList.contains("active") ? "Ditambahkan ke Favorit ❤️" : "Dihapus dari Favorit");
+    });
+  }
+
+  // Sinkronisasi otomatis saat pelanggan mengetik nama / WhatsApp di keranjang
+  const custNameInput = document.getElementById("customer-name");
+  const custPhoneInput = document.getElementById("customer-phone");
+  if (custNameInput) {
+    custNameInput.addEventListener("input", (e) => {
+      saveCustomerProfile(e.target.value, custPhoneInput ? custPhoneInput.value : undefined);
+    });
+  }
+  if (custPhoneInput) {
+    custPhoneInput.addEventListener("input", (e) => {
+      saveCustomerProfile(custNameInput ? custNameInput.value : undefined, e.target.value);
     });
   }
 }
@@ -892,6 +1010,7 @@ function submitOrder() {
 
   STATE.orders.unshift(newOrder);
   saveOrdersToStorage();
+  saveCustomerProfile(customerName, customerPhone);
 
   // Susun Format Pesan WhatsApp
   const waItemsText = STATE.cart.map((it, idx) => {
@@ -970,7 +1089,7 @@ function renderOrders() {
       <div class="empty-state">
         <div class="empty-icon">📦</div>
         <h3>Belum Ada Pesanan Aktif</h3>
-        <p>Pesanan yang Anda buat akan muncul di sini untuk memudahkan pemantauan.</p>
+        <p>Pesanan yang Anda buat akan muncul di sini untuk memudahkan pemantauan status.</p>
         <button class="btn btn-primary" onclick="navigateToScreen('home')">Mulai Pesan Kue</button>
       </div>
     `;
@@ -979,11 +1098,33 @@ function renderOrders() {
 
   container.innerHTML = STATE.orders.map(order => {
     const itemsPreview = order.items.map(it => `${it.quantity}x ${it.name} (${it.sizeName})`).join("<br/>");
+    const isCompleted = order.status && order.status.includes("Selesai");
+    const statusClass = isCompleted ? "status-ready" : "status-cooking";
+
+    // Format nomor WhatsApp pembeli
+    let custPhoneWa = (order.customerPhone || "").replace(/[^0-9]/g, "");
+    if (custPhoneWa.startsWith("0")) custPhoneWa = "62" + custPhoneWa.substring(1);
+
+    const waMsgNotify = encodeURIComponent(
+      `Halo Kak *${order.customerName}*! 👋\n` +
+      `Kabar gembira dari *ILMAH SWEETS* ✨\n\n` +
+      `Pesanan kue Anda (*#${order.orderId}*) sudah *SELESAI DIBUAT* dan siap diambil / diantar ya! 🎂🛵\n\n` +
+      `Rincian: ${order.items.map(i => i.quantity + 'x ' + i.name).join(', ')}\n` +
+      `Total: ${formatRupiah(order.total)}\n\n` +
+      `Terima kasih banyak telah memesan di ILMAH SWEETS 🥰`
+    );
+    const waNotifyUrl = custPhoneWa ? `https://wa.me/${custPhoneWa}?text=${waMsgNotify}` : "#";
+
     return `
       <div class="order-history-card">
         <div class="order-history-header">
-          <span class="order-id">#${order.orderId}</span>
-          <span class="order-status-badge status-cooking">${order.status}</span>
+          <div>
+            <span class="order-id">#${order.orderId}</span>
+            <span style="font-size:11px; color:var(--text-muted); display:block; margin-top:2px;">
+              Pemesan: <strong>${order.customerName}</strong>
+            </span>
+          </div>
+          <span class="order-status-badge ${statusClass}">${order.status}</span>
         </div>
         <div class="order-history-body">
           <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">
@@ -997,14 +1138,43 @@ function renderOrders() {
           </div>
         </div>
         <div class="order-history-footer">
-          <span style="font-size:12px; color:var(--text-secondary);">Total Pembayaran:</span>
-          <span style="font-family:var(--font-heading); font-size:15px; font-weight:800; color:var(--accent-raspberry);">
-            ${formatRupiah(order.total)}
-          </span>
+          <div>
+            <span style="font-size:11px; color:var(--text-secondary); display:block;">Total Tagihan:</span>
+            <span style="font-family:var(--font-heading); font-size:15px; font-weight:800; color:var(--accent-raspberry);">
+              ${formatRupiah(order.total)}
+            </span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            ${custPhoneWa ? `
+              <a href="${waNotifyUrl}" target="_blank" class="btn btn-secondary" style="min-height:36px; padding:4px 10px; font-size:11.5px; text-decoration:none;" title="Kirim kabar pesanan selesai ke WhatsApp pembeli">
+                📲 Beritahu via WA
+              </a>
+            ` : ""}
+            <button onclick="toggleOrderStatus('${order.orderId}')" class="btn btn-primary" style="min-height:36px; padding:4px 10px; font-size:11.5px;" title="Ubah status">
+              ${isCompleted ? "Diproses 👩🏻‍🍳" : "Selesai ✓"}
+            </button>
+          </div>
         </div>
       </div>
     `;
   }).join("");
+}
+
+// Fitur Penjual: Ubah status pesanan (Sedang Dibuat <-> Selesai)
+function toggleOrderStatus(orderId) {
+  const order = STATE.orders.find(o => o.orderId === orderId);
+  if (!order) return;
+
+  if (order.status && order.status.includes("Selesai")) {
+    order.status = "Sedang Dibuat 👩🏻‍🍳";
+    showToast(`Pesanan #${orderId} ditandai 'Sedang Dibuat'`);
+  } else {
+    order.status = "Pesanan Selesai / Siap ✅";
+    showToast(`Pesanan #${orderId} berhasil ditandai 'Selesai'! 🎉`);
+  }
+
+  saveOrdersToStorage();
+  renderOrders();
 }
 
 // 10. LOCAL STORAGE HELPERS
@@ -1070,28 +1240,15 @@ function loadOrdersFromStorage() {
   try {
     const saved = localStorage.getItem("ilmah_orders");
     if (saved) {
-      STATE.orders = JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        // Hapus pesanan contoh lama jika ada, hanya simpan pesanan asli pengguna
+        STATE.orders = parsed.filter(o => o.orderId !== "ILM-202611-102" && o.customerName !== "Dian Maharani");
+      } else {
+        STATE.orders = [];
+      }
     } else {
-      // Data pesanan contoh menggunakan produk riil
-      STATE.orders = [
-        {
-          orderId: "ILM-202611-102",
-          date: "23 Nov 2026",
-          deliveryDate: "2026-11-24",
-          deliveryTime: "13:00 - 16:00",
-          customerName: "Dian Maharani",
-          customerPhone: "081234567890",
-          fulfillment: "Ambil di Toko",
-          address: "Ambil langsung di gerai ILMAH SWEETS",
-          items: [
-            { name: "Bolu Ketan Hitam", sizeName: "1 Loyang Bulat Utuh", quantity: 1, unitPrice: 45000 },
-            { name: "Sago Mango", sizeName: "Cup Reguler 300 ml", quantity: 2, unitPrice: 10000 },
-            { name: "Kue Cenil Tradisional", sizeName: "Porsi Mika (Isi 10 Pcs)", quantity: 1, unitPrice: 10000 }
-          ],
-          total: 75000,
-          status: "Sedang Dibuat 👩🏻‍🍳"
-        }
-      ];
+      STATE.orders = [];
     }
   } catch (e) {
     STATE.orders = [];

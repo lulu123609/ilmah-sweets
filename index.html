@@ -429,11 +429,16 @@
           </header>
 
           <div class="account-card">
-            <div class="profile-avatar">👩🏻‍🍳</div>
+            <div class="profile-avatar" id="profile-avatar-display">👤</div>
             <div class="profile-info">
-              <h3 id="account-name-display">Dian Maharani</h3>
-              <p>Pelanggan Setia ILMAH SWEETS</p>
-              <span class="member-badge">⭐ Gold Member (Poin: 340)</span>
+              <div class="profile-name-row">
+                <h3 id="account-name-display">Pelanggan Setia</h3>
+                <button class="edit-profile-btn" onclick="promptEditProfile()" title="Ubah Nama">
+                  <span>✏️ Ubah</span>
+                </button>
+              </div>
+              <p id="account-phone-display">Sentuh 'Ubah' untuk pasang nama Anda</p>
+              <span class="member-badge" id="account-badge-display">⭐ Member ILMAH SWEETS</span>
             </div>
           </div>
 

@@ -1536,9 +1536,46 @@ h1, h2, h3, h4, .brand-title, .detail-name, .page-title {
   justify-content: center;
 }
 
+.profile-info {
+  flex: 1;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
 .profile-info h3 {
   font-size: 16px;
   font-weight: 700;
+}
+
+.edit-profile-btn {
+  background: var(--bg-cream);
+  border: 1px solid var(--border-color);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-raspberry);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s ease;
+}
+
+.edit-profile-btn:hover {
+  background: var(--accent-raspberry-light);
+  border-color: var(--accent-raspberry-soft);
+}
+
+.edit-profile-btn:active {
+  transform: scale(0.95);
 }
 
 .profile-info p {
