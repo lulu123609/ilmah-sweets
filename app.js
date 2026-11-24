@@ -13,7 +13,7 @@
 // ============================================================
 const STORE_CONFIG = {
   name: "ILMAH SWEETS",
-  phone: "0812130211060",
+  phone: "081213021060",
   address: "Jl. Serang Kp. Cangkudu, RT/RW 04/03 Kec. Balaraja, Kabupaten Tangerang, Banten ",
   hours: "Setiap Hari: 08:00 - 21:00 WIB",
   instagram: "@Lulu Ilmah Pudoh.id"
